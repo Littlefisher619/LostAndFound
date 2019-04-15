@@ -167,13 +167,13 @@ def updateFoundData():
 	except Exception as e:
 		print(repr(e))
 		return make_response(jsonify({'status': 'error','uuid':''})),500
-
+'''
 @app.route('/img/upload/<uuid>',methods=['POST'])
 def uploadImgae(uuid):
 	f = request.files['file']
 	basepath = os.path.dirname(__file__)
 	upload_path = os.path.join(basepath, 'uploads',secure_filename(uuid+'.png'))
 	f.save(upload_path)
-
+'''
 if __name__ == '__main__':
 	app.run(host='0.0.0.0',port=5000)
