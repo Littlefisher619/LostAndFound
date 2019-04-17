@@ -167,13 +167,29 @@ def updateFoundData():
 	except Exception as e:
 		print(repr(e))
 		return make_response(jsonify({'status': 'error','uuid':''})),500
-'''
-@app.route('/img/upload/<uuid>',methods=['POST'])
-def uploadImgae(uuid):
-	f = request.files['file']
-	basepath = os.path.dirname(__file__)
-	upload_path = os.path.join(basepath, 'uploads',secure_filename(uuid+'.png'))
-	f.save(upload_path)
-'''
+	
+@app.route('/ocr',methods=['POST'])
+def ocrImgae():
+	try:
+		f = request.files['file']
+		ocrresult=ocr.ocr(f.read())['words_result']
+		cnt=len(ocrresult)
+		stuname,stuid,stucollege='','',''
+		for i in range(0,cnt):
+			word=ocrresult[i]['words']
+			if '学号' in word:
+				stuname=ocrresult[i-1]['words']
+				stuid=word[3:]
+				stucollege=ocrresult[i+1]['words'][3:]
+				break
+
+
+		response = make_response(jsonify({'status':'success','data':{'stuname':stuname,'stuid':stuid,'stucollege':stucollege}}))
+
+		return response,200
+	except Exception as e:
+		print(repr(e))
+		return make_response(jsonify({'status': 'error','data':{'stuname':'','stuid':'','stucollege':''}})),500
+
 if __name__ == '__main__':
 	app.run(host='0.0.0.0',port=5000)
