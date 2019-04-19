@@ -3,8 +3,8 @@
   	<div id="searchBar">
 	    <div>
 	        <select id="searchSelect">
-	        	<option>按拾取地点查询</option>
 	        	<option>按物品名称查询</option>
+	        	<option>按丢失地点查询</option>       	
 	        	<option>按时间范围查询</option>
 	        </select>
 	    </div>
@@ -19,8 +19,8 @@
             <h1>{{ item.obj }}</h1>
             <span>{{ item.objdesc }}</span>
             <p class='mui-ellipsis'>
-              <span>发布时间：{{ item.timedesc }}</span>
-              <span>拾取地点：{{ item.timedesc }}</span>
+              <span>发布时间：{{ item.timestamp*1000 | dateFormat}}</span>
+              <span>拾取地点：{{ item.locationdesc }}</span>
               <span>拾取人：{{ item.realname }}</span>
             </p>
           </div>
@@ -45,14 +45,36 @@
 		<div class="input-group input-group-sm map-input">
 		  <span class="input-group-addon glyphicon glyphicon-paperclip" id="sizing-addon4"></span>
 		  <input type="text" class="form-control" placeholder="丢失地点" aria-describedby="sizing-addon4" v-model="locationdesc">
-		  <router-link type="button" class="btn btn-default" to="/map" tag="button">查看地图（选择坐标）</router-link>
+		  <span class="label label-default" v-text=" '当前坐标：( ' + this.$store.state.tmpLatlng.lng + ' , ' + this.$store.state.tmpLatlng.lat + ' )' "></span>
+		  <router-link type="button" class="btn btn-primary" to="/map" tag="button">查看地图（选择坐标）</router-link>
 		</div>
-		<div class="input-group input-group-sm">
-		  <span class="input-group-addon glyphicon glyphicon-calendar" id="sizing-addon5"></span>
-		  <input type="text" class="form-control" placeholder="丢失时间" aria-describedby="sizing-addon5" v-model="timedesc">
-		</div>
-	    <textarea placeholder="请输入丢失物品的详细情况" maxlength="200" v-model="objdesc"></textarea>
+		<el-date-picker
+	     v-model="timedesc"
+	     type="date"
+	     placeholder="选择日期"
+	     value-format="yyyy-MM-dd">
+	  </el-date-picker>
+	    <textarea placeholder="请输入丢失物品的详细情况（最多120字）" maxlength="120" v-model="objdesc"></textarea>
 	    <mt-button type="primary" size="large" @click="lostPublish" class="post-btn">发表寻物启示</mt-button>
+	    <mt-button size="large" @click="showcard" class="card-btn">快速发布学生卡寻物启示</mt-button>
+	    <div class="input-group imageForm">
+				<el-upload
+				  action="http://47.107.171.219:5000/ocr"
+				  list-type="picture-card"
+				  :on-preview="handlePictureCardPreview"
+				  :on-remove="handleRemove"
+				  :auto-upload="false"
+				  ref="upload"
+				  :on-success="onSuccess"
+				  :limit="1">
+				  <i class="el-icon-plus"></i>
+				</el-upload>
+				<el-dialog :visible.sync="dialogVisible">
+				  <img width="100%" :src="dialogImageUrl" alt="">
+				</el-dialog>
+			  <button class="btn btn-primary imageBtn" @click="pubcard">提交</button>
+			  <button class="btn btn-primary backBtn" @click="hideImageForm">返回</button>
+			</div>
 	</div>
   </div>
 </template>
@@ -72,7 +94,10 @@ export default {
       telephone: "",
       timedesc: "",
       latlngy: 0,
-      latlngx: 0
+      latlngx: 0,
+      existFlag: 0,
+      dialogImageUrl: '',
+      dialogVisible: false
     };
   },
   created() {
@@ -86,6 +111,16 @@ export default {
         	console.log(response);
         	if(response.body.length != 0){
         		this.newslist = response.body;
+        		this.newslist.reverse();
+        		//console.log(this.newslist);
+        		this.newslist.forEach((item)=>{
+				    	let arr = [];
+				    	arr[0] = item.timedesc.toString().substring(0,4);
+				    	arr[1] = item.timedesc.toString().substring(4,6);
+				    	arr[2] = item.timedesc.toString().substring(6,8);
+				    	item.timedesc = arr.join('-');
+				    	//console.log(item.timedesc);
+				    });
         	}         	
         } else {
           Toast("获取寻物启事表失败！");
@@ -96,7 +131,10 @@ export default {
   		if (this.objdesc.trim().length === 0 || this.realname.trim().length === 0 || this.locationdesc.trim().length === 0 || this.obj.trim().length === 0 || this.telephone.trim().length === 0 || this.timedesc.trim().length === 0) {
 	        return Toast("发布内容不能为空！");
 	    }
-  		let posttime = new Date(this.timedesc).getTime();
+  		if(this.telephone.trim().length > 11 || this.telephone.trim().length < 8 || isNaN(Number(this.telephone.trim())) ){  			
+  			return Toast("请输入8-11位联系电话");
+  		}
+  		let posttime = Number(this.timedesc.replace(/-/g,''));
   		this.latlngy = this.$store.state.tmpLatlng.lng;
   	  this.latlngx = this.$store.state.tmpLatlng.lat;
   		var LostObj = {
@@ -109,18 +147,46 @@ export default {
   			"latlngy": this.latlngy,
   			"latlngx": this.latlngx
   		};
-  		//console.log(LostObj);
-  		this.$http.post("lost/publish", JSON.stringify(LostObj))
-  		.then(response => {
-  			console.log(response);
-        if (response.body.status === "success") {       	
-          	this.getNewsList();
-        } else {
-          Toast("发布寻物启示表失败！");
-        }
-      }); 
-      this.$store.commit("updateTmpLatlng", {lng: 119.204124, lat: 26.064756});
-      //console.log(this.$store.state.tmpLatlng);
+  		let _this = this;
+  		this.newslist.some(function(item){
+  			var newtime = Number(item.timedesc.replace( /-/g,''));
+  			if(item.obj == LostObj.obj && item.objdesc == LostObj.objdesc && item.realname == LostObj.realname && LostObj.locationdesc == item.locationdesc && LostObj.telephone == item.telephone && 
+  				posttime == newtime && LostObj.latlngx == item.latlngx && LostObj.latlngy == item.latlngy){
+  					_this.existFlag = 1;
+  					Toast("该条信息已存在");
+  					return true;
+  				}else{
+  					_this.existFlag = 0;
+  				}
+  		});	
+  		if(this.existFlag == 0){
+  			this.$http.post("lost/publish", JSON.stringify(LostObj),{
+	          headers: {
+	            contentType: "application/json"
+	          }})
+	  		.then(response => {
+	  			console.log(response);
+	        if (response.body.status === "success") {
+	        		Toast("发布成功！");
+	        		alert("本条信息的uuid为：" + response.body.uuid);
+	          	this.getNewsList();
+	          	this.getNewsList();
+		          this.obj = "";
+		          this.objdesc = "";
+		          this.realname = "";
+		          this.locationdesc = "";
+		          this.telephone = "";
+		          this.timedesc = "";
+		          this.latlngy = 0;
+		          this.latlngx = 0;
+	        } else {
+	          Toast("发布寻物启示表失败！");
+	          $(".form-control").val('');
+	        }
+	      }); 
+	      this.$store.commit("updateTmpLatlng", {lng: 119.204124, lat: 26.064756});
+	      //console.log(this.$store.state.tmpLatlng);
+  		}
   	},
   	searchGo(){
     	var match = $("#searchSelect").val();
@@ -129,12 +195,15 @@ export default {
     			var search_text = $("#search-text").val();
     			if(search_text){
     				var obj = {key: "locationdesc", value: search_text};
-	    			console.log(obj);
-	    			this.$http.post("lost/search", JSON.stringify(obj) )
+	    			this.$http.post("lost/search", JSON.stringify(obj),{
+		          headers: {
+		            contentType: "application/json"
+		          }})
 			  		.then(response => {
 				        if (response) {
 				        	console.log(response);
 				          	this.newslist = response.body;
+				          	this.newslist.reverse();
 				        } else {
 				          Toast("查找失败");
 				        }
@@ -149,11 +218,15 @@ export default {
     				var timearr = search_text.split(' ');
 	    			var obj = {timefrom: new Date(timearr[0]).getTime(), timeto: new Date(timearr[1]).getTime()};
 	    			console.log(obj);
-	    			this.$http.post("lost/search/timerange", JSON.stringify(obj) )
+	    			this.$http.post("lost/search/timerange", JSON.stringify(obj),{
+		          headers: {
+		            contentType: "application/json"
+		          }})
 			  		.then(response => {
 				        if (response) {
 				        	console.log(response);
 				          	this.newslist = response.body;
+				          	this.newslist.reverse();
 				        } else {
 				          Toast("查找失败");
 				        }
@@ -167,11 +240,15 @@ export default {
     			var search_text = $("#search-text").val();
     			if(search_text){
     				var obj = {key: "obj", value: search_text};
-	    			this.$http.post("lost/search", JSON.stringify(obj))
+	    			this.$http.post("lost/search", JSON.stringify(obj),{
+		          headers: {
+		            contentType: "application/json"
+		          }})
 			  		.then(response => {
 				        if (response) {
 				        	console.log(response);
 				          	this.newslist = response.body;
+				          	this.newslist.reverse();
 				        } else {
 				          Toast("查找失败");
 				        }
@@ -190,16 +267,43 @@ export default {
     	let tmpObj = this.newslist[index];
     	this.$store.commit("updateTmpObj", tmpObj);
     	this.$router.push("/lost/" + index); 
-    }
+    },
+    showcard(){
+    	$(".imageForm").show();
+    },
+    hideImageForm(){
+    	$(".imageForm").hide();
+    },
+    pubcard(){
+    	this.$refs.upload.submit();
+    },
+    onSuccess(response){
+			 console.log(response);
+			 if (response.status === "success") {
+					this.objdesc = "姓名: " + response.data.stuname + " 学号： " + response.data.stuid + " 学院： " + response.data.stucollege;  
+				} else {
+					Toast("上传失败");
+				}
+		},
+   		handleRemove(file, fileList) {
+        console.log(file, fileList);
+      },
+      handlePictureCardPreview(file) {
+        this.dialogImageUrl = file.url;
+        this.dialogVisible = true;
+      }
   }
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 #LostCompo{
 	text-decoration: none;
 	.mui-table-view{
 	  li{
+	  	font-family: "microsoft yahei";
+	  	padding-left: 20px;
+	  	padding-right: 20px;
 	    h1{
 	      font-size: 16px;
 	      font-weight: bold;
@@ -221,6 +325,7 @@ export default {
 		text-decoration: none;
 	}
 	.cmt-container {
+		position: relative;
 	  padding: 0 20px;	 
 	  .hr{
 	  	width: 100%;
@@ -241,26 +346,79 @@ export default {
 	  } 
 	  .post-btn{
 	  	width: 15%;
+	  	display: inline-block;
 	  }
+
+	  .card-btn{
+	  	margin-left: 20px;
+	  	width: 15%;
+	  	display: inline-block;
+	  	font-size: 13px;
+	  	background: #CCCCCC;
+	  }
+	  .imageForm{
+	  	display: none;
+	  	position: absolute;
+	  	width: 40%;
+	  	left: 30%;
+	  	top: 10%;
+	  	padding: 10px 20px;
+	  	border: 1px solid rgba(51,122,183,0.5);
+	  	background: white;
+	  	z-index: 999;
+	  	
+	  	input[type="file"]{
+				display: none !important;
+			}
+	  	div{
+	  		.el-upload--picture-card{
+					.el-upload__input{
+						display: none !important;
+					}
+				}
+	  	}
+	  	.btn{
+	  		display: inline-block;
+	  		width: 15%;
+	  		height: 35px;
+	  		margin: 20px 15px 10px 0;
+	  		text-align: center;
+	  	}
+	  }
+	  .el-date-editor{
+			.el-input__prefix, .el-input__suffix{
+				top: -7px !important;
+			}
+		}
 	}
 	.input-group{
 		margin: 8px 0;
 	}
 	.map-input{
 		.btn{
-			width: 13%;
+			width: 11%;
 			display: inline-block;
 			height: 30px;
 			line-height: 30px;
 			padding-top: 0;
+			font-size: 12px;
+			margin-top: -8px;
+			font-family: "microsoft yahei";
 		}
 		input{
-			width: 87%;
+			width: 71%;
 			display: inline-block;
+		}
+		.label{
+			width: 18%;
+			display: inline-block;
+			height: 30px;
+			line-height: 30px;
+			font-size: 12px;
 		}
 	}
 	#searchBar{
-		padding: 0 10px;
+		padding: 0 10px 0 20px;
 		div{
 			display: inline-block;
 			width: 15%;
