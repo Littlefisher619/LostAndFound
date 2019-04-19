@@ -118,9 +118,10 @@ export default {
 }
 
 .mui-bar-tab .mui-tab-item-llb .mui-icon ~ .mui-tab-label {
-  font-size: 11px;
+  font-size: 12px;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: "microsoft yahei";
 }
 </style>

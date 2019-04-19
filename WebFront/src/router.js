@@ -7,6 +7,7 @@ import LostComponents from './components/subComponents/LostComponents.vue'
 import FoundComponents from './components/subComponents/FoundComponents.vue'
 import MapComponents from './components/subComponents/MapComponents.vue'
 import SingleMsgComponents from './components/subComponents/SingleMsgComponents.vue'
+import UpdateComponents from './components/subComponents/UpdateComponents.vue'
 
 // 3. 创建路由对象
 var router = new VueRouter({
@@ -18,7 +19,9 @@ var router = new VueRouter({
     { path: '/found', component: FoundComponents },
     { path: '/map', component: MapComponents },
     { path: '/found/:index', component: SingleMsgComponents },
-    { path: '/lost/:index', component: SingleMsgComponents }
+    { path: '/lost/:index', component: SingleMsgComponents },
+    { path: '/found/:index/update', component: UpdateComponents },
+    { path: '/lost/:index/update', component: UpdateComponents },
   ],
   linkActiveClass: 'mui-active' // 覆盖默认的路由高亮的类，默认的类叫做 router-link-active
 })

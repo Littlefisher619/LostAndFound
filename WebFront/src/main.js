@@ -11,8 +11,10 @@ Vue.use(Vuex)
 
 var store = new Vuex.Store({
   state: { // this.$store.state.***
-    tmpLatlng: {lng: 119.204124, lat: 26.064756},
-    tmpObj: {}
+    tmpLatlng: {lng: 119.204124, lat: 26.064756},  // 地图组件中定位坐标
+    tmpObj: {},  // 查看单件物品的临时存储信息
+    singleMsgLatlng: {lng: -1, lat: -1},  // 保存单件物品的坐标
+    updateUUID: ""  //进行修改操作时临时存储uuid
   },
   mutations: { // this.$store.commit('方法的名称', '按需传递唯一的参数')
     updateTmpLatlng(state, obj){
@@ -23,6 +25,13 @@ var store = new Vuex.Store({
     updateTmpObj(state, obj){
     	state.tmpObj = obj;
     	//console.log(state.tmpObj);
+    },
+    updateSingleMsgLatlng(state, obj){
+    	state.singleMsgLatlng.lng = obj.lng;
+    	state.singleMsgLatlng.lat = obj.lat;
+    },
+    updateUUID(state,uuid){
+    	state.updateUUID = uuid;
     }
   },
   getters: { // this.$store.getters.***
@@ -33,7 +42,7 @@ var store = new Vuex.Store({
 // 导入格式化时间的插件
 import moment from 'moment'
 // 定义全局的过滤器
-Vue.filter('dateFormat', function (dataStr, pattern = "YYYY-MM-DD HH:mm:ss") {
+Vue.filter('dateFormat', function (dataStr, pattern = "YYYY-MM-DD") {
   return moment(dataStr).format(pattern)
 })
 
@@ -55,11 +64,15 @@ import './lib/mui/css/icons-extra.css'
 import $ from 'jquery'
 import 'bootstrap/css/bootstrap.css'
 
-// 按需导入 Mint-UI 中的组件   
+// 导入 Mint-UI 中的组件   
 import MintUI from 'mint-ui'
 Vue.use(MintUI)
 import 'mint-ui/lib/style.css'
 
+// 导入swiper
+import VueAwesomeSwiper from 'vue-awesome-swiper'
+import 'swiper/dist/css/swiper.css'
+Vue.use(VueAwesomeSwiper)
 
 // 安装 图片预览插件
 //import VuePreview from 'vue-preview'
