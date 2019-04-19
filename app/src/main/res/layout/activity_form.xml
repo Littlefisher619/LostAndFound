@@ -33,7 +33,7 @@
     </RelativeLayout>
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -270,8 +270,16 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp" />
             </RelativeLayout>
+            <Button
+                android:id="@+id/school_card"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/button_selector"
+                android:layout_marginTop="20dp"
+                android:text="快速识别学生卡"
+                android:textColor="@color/colorTextOrIcons"
+                />
         </LinearLayout>
-
     </ScrollView>
-
 </LinearLayout>

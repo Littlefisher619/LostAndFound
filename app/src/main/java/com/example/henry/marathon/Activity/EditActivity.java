@@ -24,12 +24,21 @@ public class EditActivity extends AppCompatActivity {
         editText = findViewById(R.id.edit_query);
         Intent intentget = getIntent();
         String data = intentget.getStringExtra("extra_data");
+        String content = intentget.getStringExtra("content");
         if (data.equals("请输入您的手机号码：")){
             editText.setInputType(InputType.TYPE_CLASS_NUMBER);
             editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(11)});
         }else if (data.equals("请输入您的姓名：")){
             editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(5)});
+        }else if(data.equals("请输入物品描述：")){
+            editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(50)});
+        }else if (data.equals("请输入地点描述：")){
+            editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(30)});
+        }else if (data.equals("请输入物品的名字：")){
+            editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(10)});
         }
+        editText.setText(content);
+        editText.setSelection(editText.getText().length());
         ActionBar actionBar = getSupportActionBar();
         if (actionBar!=null){
             actionBar.hide();

@@ -2,9 +2,12 @@ package com.example.henry.marathon.Activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -26,6 +29,7 @@ import com.example.henry.marathon.R;
 import com.example.henry.marathon.adapter.Myadapter;
 import com.example.henry.marathon.javabean.Obj;
 import com.example.henry.marathon.javabean.Search;
+import com.example.henry.marathon.object_Interface.OnItemClickListener;
 import com.example.henry.marathon.utils.HttpUtil;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -53,6 +57,7 @@ public class MainActivity extends AppCompatActivity
     private ViewPager viewPager;
     private View foundView;
     private View lostView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private List<View> viewList = new ArrayList<>();
     private String TAGG = "SEARCHHHHH";
@@ -75,7 +80,7 @@ public class MainActivity extends AppCompatActivity
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.addDrawerListener(toggle);
         toggle.syncState();
-        LayoutInflater inflater = getLayoutInflater();
+        final LayoutInflater inflater = getLayoutInflater();
         /*              给控件赋值
          *
          *
@@ -83,6 +88,7 @@ public class MainActivity extends AppCompatActivity
          *
          */
         viewPager = findViewById(R.id.viewpaper);
+
         progressBar =findViewById(R.id.progress_bar);
         foundView = inflater.inflate(R.layout.foundpaper,null);
         lostView = inflater.inflate(R.layout.lostpaper,null);
@@ -93,13 +99,92 @@ public class MainActivity extends AppCompatActivity
         searchView = (MaterialSearchView) findViewById(R.id.search_view);
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         bottomNavigationView = findViewById(R.id.bottomNavigationView);
+        swipeRefreshLayout = findViewById(R.id.swipe_refresh);
         viewList.add(foundView);
         viewList.add(lostView);
+        /****************************************************/
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                httpUtil.HttpGet("http://47.107.171.219:5000/found/all", new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.d(TAG, "onFailure: shit");
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        String josn = response.body().string();
+                        int code = response.code();
+                        Log.d(TAG, "onResponse: "+code);
+                        Log.d(TAG, "onResponse: "+josn);
+                        if (code==200){
+                            if (!objList_found.isEmpty()){
+                                objList_found.clear();
+                                Log.d(TAG, "onResponse: 列表不是空的");
+                            }
+                            List<Obj> objListTemp;
+                            objListTemp = gson.fromJson(josn,new TypeToken<List<Obj>>(){}.getType());
+                            objList_found.addAll(objListTemp);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    myadapter_found.notifyDataSetChanged();
+                                }
+                            });
+                        }else {
+                            Log.d(TAG, "onResponse: "+"GetFailure");
+                        }
+                    }
+
+                });
+                httpUtil.HttpGet("http://47.107.171.219:5000/lost/all", new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.d(TAG, "onFailure: shit");
+                    }
+
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        String josn = response.body().string();
+                        int code = response.code();
+                        Log.d(TAG, "onResponse: "+code);
+                        Log.d(TAG, "onResponse: "+josn);
+                        if (code==200){
+                            if (!objList_lost.isEmpty()){
+                                objList_lost.clear();
+                                Log.d(TAG, "onResponse: 列表不是空的");
+                            }
+                            List<Obj> objListTemp;
+                            objListTemp = gson.fromJson(josn,new TypeToken<List<Obj>>(){}.getType());
+                            objList_lost.addAll(objListTemp);
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    myadapter_lost.notifyDataSetChanged();
+                                }
+                            });
+                        }else {
+                            Log.d(TAG, "onResponse: "+"GetFailure");
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                swipeRefreshLayout.setRefreshing(false);
+                            }
+                        });
+                    }
+                });
+            }
+        });
         /**********************************************************
          *
          *
          *
          */
+        /***************/
+        /***********/
         searchView.setVoiceSearch(false);
         PagerAdapter pagerAdapter = new PagerAdapter() {
 
@@ -176,7 +261,6 @@ public class MainActivity extends AppCompatActivity
                             Log.d(TAG, "lost_onResponse: "+json);
                             List<Obj> objListtem = gson.fromJson(json,new TypeToken<List<Obj>>(){}.getType());
                             objList_lost.addAll(objListtem);
-                            if (!objList_lost.isEmpty()){
                                 //todo write recycerview here
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -184,9 +268,7 @@ public class MainActivity extends AppCompatActivity
                                         myadapter_lost.notifyDataSetChanged();
                                     }
                                 });
-                            }
-                        }
-                        else {
+                        } else {
                             Log.d(TAG, "onResponse: "+"GetFailure");
                         }
                     }
@@ -218,7 +300,6 @@ public class MainActivity extends AppCompatActivity
                                 Log.d(TAG, "onResponse: "+"found");
                             }
                             objList_found.addAll(objListtem);
-                            if (!objList_found.isEmpty()){
                                 //todo write recycerview here
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -226,10 +307,7 @@ public class MainActivity extends AppCompatActivity
                                         myadapter_found.notifyDataSetChanged();
                                     }
                                 });
-                            }
-                        }
-
-                        else {
+                        } else {
                             Log.d(TAG, "onResponse: "+"GetFailure");
                         }
                         runOnUiThread(new Runnable() {
@@ -289,6 +367,35 @@ public class MainActivity extends AppCompatActivity
                         //todo write recycerview here
                         Log.d(TAG+"OnCreate", "onResponse: 列表不是空的");
                         myadapter_found = new Myadapter(objList_found);
+                        myadapter_found.setOnItemClickListener(new OnItemClickListener() {
+                            @Override
+                            public void onItemClick(int position) {
+                                Intent intent = new Intent(MainActivity.this,detial.class);
+                                String name;
+                                String describe;
+                                int date;
+                                double latitude;
+                                double longitude;
+                                String per_name;
+                                String tel;
+                                Obj temp = objList_found.get(position);
+                                name = temp.getName();
+                                describe=temp.getDescribe()+"。"+temp.getLocationdesc();
+                                date =temp.getDate().intValue();
+                                per_name = temp.getPerson_name();
+                                tel = temp.getPerson_tel();
+                                latitude = temp.getLatlngx();
+                                longitude = temp.getLatlngy();
+                                intent.putExtra("name",name);
+                                intent.putExtra("describe",describe);
+                                intent.putExtra("date",date);
+                                intent.putExtra("per_name",per_name);
+                                intent.putExtra("tel",tel);
+                                intent.putExtra("latitude",latitude);
+                                intent.putExtra("longitude",longitude);
+                                startActivity(intent);
+                            }
+                        });
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -324,6 +431,35 @@ public class MainActivity extends AppCompatActivity
                         //todo write recycerview here
                         Log.d(TAG+"OnCreate", "onResponse: 列表不是空的");
                         myadapter_lost = new Myadapter(objList_lost);
+                        myadapter_lost.setOnItemClickListener(new OnItemClickListener() {
+                            @Override
+                            public void onItemClick(int position) {
+                                Intent intent = new Intent(MainActivity.this,detial.class);
+                                String name;
+                                String describe;
+                                int date;
+                                double latitude;
+                                double longitude;
+                                String per_name;
+                                String tel;
+                                Obj temp = objList_lost.get(position);
+                                name = temp.getName();
+                                describe=temp.getDescribe()+"。"+temp.getLocationdesc();
+                                date =temp.getDate().intValue();
+                                per_name = temp.getPerson_name();
+                                tel = temp.getPerson_tel();
+                                latitude = temp.getLatlngx();
+                                longitude = temp.getLatlngy();
+                                intent.putExtra("name",name);
+                                intent.putExtra("describe",describe);
+                                intent.putExtra("date",date);
+                                intent.putExtra("per_name",per_name);
+                                intent.putExtra("tel",tel);
+                                intent.putExtra("latitude",latitude);
+                                intent.putExtra("longitude",longitude);
+                                startActivity(intent);
+                            }
+                        });
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -390,11 +526,11 @@ public class MainActivity extends AppCompatActivity
             // Handle the camera action
             Intent intent = new Intent(MainActivity.this,form.class);
             intent.putExtra("class","lost");
-            startActivity(intent);
+            startActivityForResult(intent,1);
         } else if (id == R.id.nav_gallery) {
             Intent intent = new Intent(MainActivity.this,form.class);
             intent.putExtra("class","found");
-            startActivity(intent);
+            startActivityForResult(intent,2);
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
@@ -416,69 +552,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onRestart() {
         super.onRestart();
-        httpUtil.HttpGet("http://47.107.171.219:5000/found/all", new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.d(TAG, "onFailure: shit");
-            }
 
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String josn = response.body().string();
-                int code = response.code();
-                Log.d(TAG, "onResponse: "+code);
-                Log.d(TAG, "onResponse: "+josn);
-                if (code==200){
-                    if (!objList_found.isEmpty()){
-                        objList_found.clear();
-                        Log.d(TAG, "onResponse: 列表不是空的");
-                    }
-                    List<Obj> objListTemp;
-                    objListTemp = gson.fromJson(josn,new TypeToken<List<Obj>>(){}.getType());
-                    objList_found.addAll(objListTemp);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            myadapter_found.notifyDataSetChanged();
-                        }
-                    });
-                }else {
-                    Log.d(TAG, "onResponse: "+"GetFailure");
-                }
-            }
-
-        });
-        httpUtil.HttpGet("http://47.107.171.219:5000/lost/all", new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-                Log.d(TAG, "onFailure: shit");
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-                String josn = response.body().string();
-                int code = response.code();
-                Log.d(TAG, "onResponse: "+code);
-                Log.d(TAG, "onResponse: "+josn);
-                if (code==200){
-                    if (!objList_lost.isEmpty()){
-                        objList_lost.clear();
-                        Log.d(TAG, "onResponse: 列表不是空的");
-                    }
-                    List<Obj> objListTemp;
-                    objListTemp = gson.fromJson(josn,new TypeToken<List<Obj>>(){}.getType());
-                    objList_lost.addAll(objListTemp);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            myadapter_lost.notifyDataSetChanged();
-                        }
-                    });
-                }else {
-                    Log.d(TAG, "onResponse: "+"GetFailure");
-                }
-            }
-        });
     }
 
     @Override
@@ -505,7 +579,110 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onPageScrollStateChanged(int i) {
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (resultCode == RESULT_OK){
+            if (data!=null){
+                Search searchobj = new Search();
+                searchobj.setKey("obj");
+                searchobj.setValue(data.getStringExtra("obj_name"));
+                String json = gson.toJson(searchobj);
+                httpUtil.HttpPost("http://47.107.171.219:5000/lost/search", json, new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.d(TAG, "onFailure: ");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this,"Network error",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressBar.setVisibility(View.VISIBLE);
+                            }
+                        });
+                        String json = response.body().string();
+                        int code = response.code();
+                        if (code==200){
+                            if (!objList_lost.isEmpty()){
+                                Log.d(TAG+"OnCreate", "onResponse: lost列表不是空的");
+                                objList_lost.clear();
+                            }
+                            Log.d(TAG, "lost_onResponse: "+code);
+                            Log.d(TAG, "lost_onResponse: "+json);
+                            List<Obj> objListtem = gson.fromJson(json,new TypeToken<List<Obj>>(){}.getType());
+                            objList_lost.addAll(objListtem);
+                                //todo write recycerview here
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        myadapter_lost.notifyDataSetChanged();
+                                    }
+                                });
 
+                        } else {
+                            Log.d(TAG, "onResponse: "+"GetFailure");
+                        }
+                    }
+                });
+                httpUtil.HttpPost("http://47.107.171.219:5000/found/search", json, new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.d(TAG, "onFailure: ");
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this,"Network error",Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                    @Override
+                    public void onResponse(Call call, Response response) throws IOException {
+                        String json = response.body().string();
+                        int code = response.code();
+                        Log.d(TAG, "found_onResponse: "+code);
+                        Log.d(TAG, "found_onResponse: "+json);
+                        List<Obj> objListtem = gson.fromJson(json,new TypeToken<List<Obj>>(){}.getType());
+                        if (code == 200){
+                            if (!objList_found.isEmpty()){
+                                objList_found.clear();
+                                Log.d(TAG+"OnCreate", "onResponse: found列表不是空的");
+                            }
+                            else {
+                                Log.d(TAG, "onResponse: "+"found");
+                            }
+                            objList_found.addAll(objListtem);
+                                //todo write recycerview here
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        myadapter_found.notifyDataSetChanged();
+                                    }
+                                });
+                        } else {
+                            Log.d(TAG, "onResponse: "+"GetFailure");
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                progressBar.setVisibility(View.GONE);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+    }
+    @Override
+    public void onPageScrollStateChanged(int i) {
+        if(i == 1) {
+            swipeRefreshLayout.setEnabled(false);//设置不可触发
+        }else if(i == 2){
+            swipeRefreshLayout.setEnabled(true);//设置可触发
+        }
     }
 }
