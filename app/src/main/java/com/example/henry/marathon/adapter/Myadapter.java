@@ -9,13 +9,26 @@ import android.widget.TextView;
 
 import com.example.henry.marathon.R;
 import com.example.henry.marathon.javabean.Obj;
+import com.example.henry.marathon.object_Interface.OnItemClickListener;
 
 import java.util.List;
-public class Myadapter extends RecyclerView.Adapter<Myadapter.ViewHolder> {
+public class Myadapter extends RecyclerView.Adapter<Myadapter.ViewHolder> implements View.OnClickListener {
     private List<Obj> itemList;
+    private OnItemClickListener onItemClickListener;
+    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
+        this.onItemClickListener = onItemClickListener;
+    }
     public Myadapter(List<Obj> itemList){
         this.itemList = itemList;
     }
+
+    @Override
+    public void onClick(View v) {
+        if (onItemClickListener!=null){
+            onItemClickListener.onItemClick((Integer) v.getTag());
+        }
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder{
         TextView ojbname;
         TextView person_name;
@@ -35,10 +48,11 @@ public class Myadapter extends RecyclerView.Adapter<Myadapter.ViewHolder> {
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
          View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.obj_item,viewGroup,false);
+         view.setOnClickListener(this);
          return new ViewHolder(view);
     }
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder viewHolder, int position) {
+    public void onBindViewHolder(@NonNull final ViewHolder viewHolder, final int position) {
 
         Obj temp = itemList.get(position);
         int year = temp.getDate().intValue()/10000;
@@ -49,6 +63,7 @@ public class Myadapter extends RecyclerView.Adapter<Myadapter.ViewHolder> {
         viewHolder.person_tel.setText(temp.getPerson_tel());
         viewHolder.time.setText(String.valueOf(year)+"/"+month+"/"+day);
         viewHolder.describe.setText(temp.getDescribe()+","+temp.getLocationdesc());
+        viewHolder.itemView.setTag(position);
     }
     @Override
     public int getItemCount() {

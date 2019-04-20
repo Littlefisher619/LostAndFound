@@ -7,7 +7,7 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
-        <item name="viewInflaterClass">androidx.appcompat.app.AppCompatViewInflater</item>
+        <item name="viewInflaterClass">#FFFFFF</item>
     </style>
     <style name="MaterialSearchViewStyle">
         <!-- Background for the search bar -->

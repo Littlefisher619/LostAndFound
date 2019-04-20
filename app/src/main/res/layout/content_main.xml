@@ -19,10 +19,16 @@
         android:layout_alignParentBottom="true"
         app:menu="@menu/bottom_menu"
         />
-    <android.support.v4.view.ViewPager
-        android:id="@+id/viewpaper"
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/bottomNavigationView"
-        />
+        >
+        <android.support.v4.view.ViewPager
+            android:id="@+id/viewpaper"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+    </android.support.v4.widget.SwipeRefreshLayout>
 </RelativeLayout>
