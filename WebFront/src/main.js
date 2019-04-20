@@ -74,10 +74,6 @@ import VueAwesomeSwiper from 'vue-awesome-swiper'
 import 'swiper/dist/css/swiper.css'
 Vue.use(VueAwesomeSwiper)
 
-// 安装 图片预览插件
-//import VuePreview from 'vue-preview'
-//Vue.use(VuePreview)
-
 // 导入 ElementUI 
 import ElementUI from 'element-ui';
 import 'element-ui/lib/theme-chalk/index.css';

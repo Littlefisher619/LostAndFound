@@ -108,7 +108,7 @@ export default {
       // 获取新闻列表
       this.$http.get("lost/all").then(response => {
         if (response.status === 200) {
-        	console.log(response);
+        //	console.log(response);
         	if(response.body.length != 0){
         		this.newslist = response.body;
         		this.newslist.reverse();
@@ -128,11 +128,21 @@ export default {
       });     	
   	},
   	lostPublish(){
+  		let year = new Date().getFullYear();
+  		let month = new Date().getMonth()+1;
+  		month = month < 10 ? "0"+month : month;
+  		let day = new Date().getDate();
+  		day = day < 10 ? "0"+day : day;
+  		let tmpDate =  year + "-" + month + "-" + day;
+  		
   		if (this.objdesc.trim().length === 0 || this.realname.trim().length === 0 || this.locationdesc.trim().length === 0 || this.obj.trim().length === 0 || this.telephone.trim().length === 0 || this.timedesc.trim().length === 0) {
 	        return Toast("发布内容不能为空！");
 	    }
   		if(this.telephone.trim().length > 11 || this.telephone.trim().length < 8 || isNaN(Number(this.telephone.trim())) ){  			
   			return Toast("请输入8-11位联系电话");
+  		}
+  		if(new Date(this.timedesc).getTime() > new Date().getTime() && this.timedesc != tmpDate){
+  				return Toast("请选择正确的时间");
   		}
   		let posttime = Number(this.timedesc.replace(/-/g,''));
   		this.latlngy = this.$store.state.tmpLatlng.lng;
@@ -165,7 +175,7 @@ export default {
 	            contentType: "application/json"
 	          }})
 	  		.then(response => {
-	  			console.log(response);
+	  			//console.log(response);
 	        if (response.body.status === "success") {
 	        		Toast("发布成功！");
 	        		alert("本条信息的uuid为：" + response.body.uuid);
@@ -200,12 +210,12 @@ export default {
 		            contentType: "application/json"
 		          }})
 			  		.then(response => {
-				        if (response) {
-				        	console.log(response);
+				        if (response.body.length) {
+				        	//console.log(response);
 				          	this.newslist = response.body;
 				          	this.newslist.reverse();
 				        } else {
-				          Toast("查找失败");
+				          Toast("找不到符合的物品");
 				        }
 			        });
     			}else{
@@ -217,18 +227,18 @@ export default {
     			if(search_text){
     				var timearr = search_text.split(' ');
 	    			var obj = {timefrom: new Date(timearr[0]).getTime(), timeto: new Date(timearr[1]).getTime()};
-	    			console.log(obj);
+	    			//console.log(obj);
 	    			this.$http.post("lost/search/timerange", JSON.stringify(obj),{
 		          headers: {
 		            contentType: "application/json"
 		          }})
 			  		.then(response => {
-				        if (response) {
-				        	console.log(response);
+				        if (response.body.length) {
+				        	//console.log(response);
 				          	this.newslist = response.body;
 				          	this.newslist.reverse();
 				        } else {
-				          Toast("查找失败");
+				          Toast("找不到符合的物品");
 				        }
 			        });
     			}else{
@@ -245,12 +255,12 @@ export default {
 		            contentType: "application/json"
 		          }})
 			  		.then(response => {
-				        if (response) {
-				        	console.log(response);
+				        if (response.body.length) {
+				        	//console.log(response);
 				          	this.newslist = response.body;
 				          	this.newslist.reverse();
 				        } else {
-				          Toast("查找失败");
+				          Toast("找不到符合的物品");
 				        }
 			        });
     			}else{
@@ -278,7 +288,7 @@ export default {
     	this.$refs.upload.submit();
     },
     onSuccess(response){
-			 console.log(response);
+			// console.log(response);
 			 if (response.status === "success") {
 					this.objdesc = "姓名: " + response.data.stuname + " 学号： " + response.data.stuid + " 学院： " + response.data.stucollege;  
 				} else {
@@ -286,7 +296,7 @@ export default {
 				}
 		},
    		handleRemove(file, fileList) {
-        console.log(file, fileList);
+       // console.log(file, fileList);
       },
       handlePictureCardPreview(file) {
         this.dialogImageUrl = file.url;
@@ -402,7 +412,7 @@ export default {
 			line-height: 30px;
 			padding-top: 0;
 			font-size: 12px;
-			margin-top: -8px;
+			margin-top: -5px;
 			font-family: "microsoft yahei";
 		}
 		input{
@@ -425,7 +435,7 @@ export default {
 			select{
 				width: 100%;
 				box-sizing: border-box;
-				padding-left: 45px;
+				padding-left: 50px;
 				background: #CCCCCC;
 				
 				option{

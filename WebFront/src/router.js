@@ -23,7 +23,7 @@ var router = new VueRouter({
     { path: '/found/:index/update', component: UpdateComponents },
     { path: '/lost/:index/update', component: UpdateComponents },
   ],
-  linkActiveClass: 'mui-active' // 覆盖默认的路由高亮的类，默认的类叫做 router-link-active
+  linkActiveClass: 'mui-active' // 覆盖默认的路由高亮的类， router-link-active
 })
 
 // 把路由对象暴露出去

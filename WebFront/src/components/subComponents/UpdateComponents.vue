@@ -51,15 +51,24 @@ export default {
   		this.originMsg = this.$store.state.tmpObj;
   		this.originMsg.timedesc = this.originMsg.timedesc.replace( /-/g,'');
   	},
-  	updatePost(){//08636624-61e5-11e9-9138-00163e1077d1
+  	updatePost(){
+  		let year = new Date().getFullYear();
+  		let month = new Date().getMonth()+1;
+  		month = month < 10 ? "0"+month : month;
+  		let day = new Date().getDate();
+  		day = day < 10 ? "0"+day : day;
+  		let tmpDate =  year + "-" + month + "-" + day;
+  		
   		if (this.originMsg.objdesc.trim().length === 0 || this.originMsg.realname.trim().length === 0 || this.originMsg.locationdesc.trim().length === 0 || this.originMsg.obj.trim().length === 0 || this.originMsg.telephone.trim().length === 0 || this.originMsg.timedesc.length === 0) {
 	        return Toast("更新内容不能为空！");
 	    }
   		if(this.originMsg.telephone.trim().length > 11 || this.originMsg.telephone.trim().length < 8 || isNaN(Number(this.originMsg.telephone.trim())) ){  			
   			return Toast("请输入8-11位联系电话");
   		}
+  		if(new Date(this.timedesc).getTime() > new Date().getTime() && this.timedesc != tmpDate){
+  				return Toast("请选择正确的时间");
+  		}
   		let posttime = Number(this.originMsg.timedesc.replace(/-/g,''));
-  		//let posttime = Number(this.originMsg.timedesc);
   		this.originMsg.latlngy = this.$store.state.tmpLatlng.lng;
   	 	this.originMsg.latlngx = this.$store.state.tmpLatlng.lat;
   		var updateObj = {
@@ -74,7 +83,7 @@ export default {
   			"timestamp": new Date().getTime(),
   			"uuid": this.$store.state.updateUUID
   		};
-  		console.log(updateObj);
+  		//console.log(updateObj);
   		if(this.$route.path.indexOf("found") != -1){
   			this.$http.post("found/update", JSON.stringify(updateObj),{
 	          headers: {
