@@ -2,13 +2,21 @@
   <div id="LostCompo">
   	<div id="searchBar">
 	    <div>
-	        <select id="searchSelect">
+	        <select id="searchSelect" @change="selectedShow">
 	        	<option>按物品名称查询</option>
 	        	<option>按丢失地点查询</option>       	
 	        	<option>按时间范围查询</option>
 	        </select>
 	    </div>
-	    <input type="text" class="form-control" id="search-text">
+	    <input type="text" class="form-control" id="search-text" v-show="rangeFlag">
+	    <el-date-picker
+	    	v-show="!rangeFlag"
+     		v-model="timerange"
+	      type="daterange"
+	      range-separator="至"
+	      start-placeholder="起始日期"
+	      end-placeholder="终止日期">
+	    </el-date-picker>
 	    <button type="button" class="btn btn-default" id="search-go" @click="searchGo">搜索</button>
 	    <button type="button" class="btn btn-default" id="show-allLost" @click="showAllMsg">显示所有</button>
 	  </div>
@@ -97,7 +105,9 @@ export default {
       latlngx: 0,
       existFlag: 0,
       dialogImageUrl: '',
-      dialogVisible: false
+      dialogVisible: false,
+      timerange: "",
+      rangeFlag: 1  // 1显示文本框，0显示日期选择
     };
   },
   created() {
@@ -198,6 +208,20 @@ export default {
 	      //console.log(this.$store.state.tmpLatlng);
   		}
   	},
+  	selectedShow(){
+    	var chooseText = $("#searchSelect").val();
+    	switch (chooseText){
+    		case "按丢失地点查询":
+    			this.rangeFlag = 1;
+    			break;
+    		case "按时间范围查询":
+    			this.rangeFlag = 0;
+    			break;
+    		case "按物品名称查询":
+    			this.rangeFlag = 1;
+    			break;
+    	}
+    },
   	searchGo(){
     	var match = $("#searchSelect").val();
     	switch (match){
@@ -223,28 +247,24 @@ export default {
     			}
     			break;
     		case "按时间范围查询":
-    			var search_text = $("#search-text").val();
-    			if(search_text){
-    				var timearr = search_text.split(' ');
-	    			var obj = {timefrom: new Date(timearr[0]).getTime(), timeto: new Date(timearr[1]).getTime()};
-	    			//console.log(obj);
-	    			this.$http.post("lost/search/timerange", JSON.stringify(obj),{
-		          headers: {
-		            contentType: "application/json"
-		          }})
-			  		.then(response => {
-				        if (response.body.length) {
-				        	//console.log(response);
-				          	this.newslist = response.body;
-				          	this.newslist.reverse();
-				        } else {
-				          Toast("找不到符合的物品");
-				        }
-			        });
-    			}else{
-    				 Toast("查找内容不得为空");
-    			}
-    			
+    			let startTime = new Date(this.timerange[0]).getTime() / 1000;
+    			let endTime = new Date(this.timerange[1]).getTime() / 1000;
+    			console.log(startTime);
+    			console.log(endTime);
+	    		var obj = {timefrom: startTime, timeto: endTime};
+	    		this.$http.post("lost/search/timerange", JSON.stringify(obj),{
+		         headers: {
+		           contentType: "application/json"
+		         }})
+			  	.then(response => {
+			  		console.log(response);
+				    if (response.body.length) {
+					    this.newslist = response.body;
+					    this.newslist.reverse();
+					  } else {
+				       Toast("找不到符合的物品");
+				    }
+			   	});
     			break;
     		case "按物品名称查询":
     			var search_text = $("#search-text").val();
@@ -444,6 +464,16 @@ export default {
 			}
 			select:hover{
 				cursor: pointer;
+			}
+		}
+		.el-range-editor{
+			display: inline-block;
+			width: 40%;
+			
+			input{
+				margin-top: 0px;
+				width: 45%;
+				border-bottom: 1px solid #DCDFE6;
 			}
 		}
 		input{

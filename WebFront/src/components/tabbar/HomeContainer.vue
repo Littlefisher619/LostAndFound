@@ -55,7 +55,7 @@ export default {
 		    },
 		    navigation: {
 					nextEl: '.swiper-button-next',
-				    prevEl: '.swiper-button-prev',
+				   prevEl: '.swiper-button-prev',
 				},
 				effect : 'cube',
 				speed: 1300,
